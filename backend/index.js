@@ -1,7 +1,7 @@
 const express = require("express");
 const cors = require("cors");
 
-const { MongoClient } = require("mongodb");
+const { MongoClient, ObjectId } = require("mongodb");
 
 const app = express();
 
@@ -26,6 +26,61 @@ async function connectdb() {
 
     res.json(data);
   });
+
+
+  app.get("/get-article/:id", async(req, res)=>{
+    const id = req.params.id;
+
+    console.log(id);
+
+    const article= await articles.findOne({
+      _id: new MongoClient.ObjectId(id)
+    });
+    
+    res.json(article);
+
+  });
+
+
+
+app.put("/articles/:id", async(req, res)=>{
+  const id= req.params.id;
+
+  const{ title, content}= req.body;
+
+  await articles.updateOne({
+    _id: new ObjectId(id)},
+  
+    {
+    $set:{
+      title: title,
+      content: content
+    }
+  }
+  
+  );
+
+  res.json({
+    message: "article updated"
+  });
+});
+
+
+app.delete("/delete-article/:id", async(req, res)=>{
+
+  const id = req.params.id;
+
+  await articles.deleteOne({
+    _id: new ObjectId(id)
+  });
+
+  res.json({
+    message: "article deleted"
+  })
+})
+
+
+
 }
 connectdb();
 
