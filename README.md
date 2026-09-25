@@ -13,4 +13,12 @@ api contract
 3.  Get One Article
     GET /articles/:id
 
-    Returns one specific article using its MongoDB ID.     
+    Returns one specific article using its MongoDB ID.   
+
+4. Update Article
+
+PUT /articles/:id
+
+5. Delete Article
+
+DELETE /delete-article/:id
