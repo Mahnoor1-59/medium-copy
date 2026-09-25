@@ -22,6 +22,7 @@ async function connectdb() {
    articles = db.collection("articles");
 
   app.get("/get-all-articles", async (req, res) => {
+    
     const data = await articles.find().toArray();
 
     res.json(data);
@@ -29,24 +30,47 @@ async function connectdb() {
 
 
   app.get("/get-article/:id", async(req, res)=>{
+
+    try{
     const id = req.params.id;
 
-    console.log(id);
+    if(!ObjectId.isValid(id)){
+      return res.status(400).json({
+        message: "invalid id"
+      });
+    }
+
 
     const article= await articles.findOne({
       _id: new MongoClient.ObjectId(id)
     });
-    
-    res.json(article);
+    if (!article){
+      return res.status(404).json({
+        message: "article not found"
+      })    }
+    res.status(200).json(article);
+    }catch(error){
+      console.log(error);
+
+      res.status(500).json({
+        message: "something went wrong"
+      });
+
+    }
+  
 
   });
 
 
 
 app.put("/articles/:id", async(req, res)=>{
+
+  
   const id= req.params.id;
 
   const{ title, content}= req.body;
+
+  
 
   await articles.updateOne({
     _id: new ObjectId(id)},
