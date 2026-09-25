@@ -19,92 +19,127 @@ async function connectdb() {
   console.log("mongodb is connected");
 
   const db = client.db("minimedium");
-   articles = db.collection("articles");
+  articles = db.collection("articles");
 
   app.get("/get-all-articles", async (req, res) => {
-    
     const data = await articles.find().toArray();
 
     res.json(data);
   });
 
+  app.get("/get-article/:id", async (req, res) => {
+    try {
+      const id = req.params.id;
 
-  app.get("/get-article/:id", async(req, res)=>{
+      if (!ObjectId.isValid(id)) {
+        return res.status(400).json({
+          message: "invalid id",
+        });
+      }
 
-    try{
-    const id = req.params.id;
-
-    if(!ObjectId.isValid(id)){
-      return res.status(400).json({
-        message: "invalid id"
+      const article = await articles.findOne({
+        _id: new MongoClient.ObjectId(id),
       });
-    }
-
-
-    const article= await articles.findOne({
-      _id: new MongoClient.ObjectId(id)
-    });
-    if (!article){
-      return res.status(404).json({
-        message: "article not found"
-      })    }
-    res.status(200).json(article);
-    }catch(error){
+      if (!article) {
+        return res.status(404).json({
+          message: "article not found",
+        });
+      }
+      res.status(200).json(article);
+    } catch (error) {
       console.log(error);
 
       res.status(500).json({
-        message: "something went wrong"
+        message: "something went wrong",
+      });
+    }
+  });
+
+  app.put("/articles/:id", async (req, res) => {
+    try {
+      const id = req.params.id;
+
+      const { title, content } = req.body;
+
+      //checking valid id
+
+      if (!ObjectId.isValid(id)) {
+        res.status(400).json({
+          message: "invalid id",
+        });
+      }
+      //checking data
+
+      if (!title || !content) {
+        return res.status(400).json({
+          message: "title and  content can be empty",
+        });
+      }
+
+      const result = await articles.updateOne(
+        {
+          _id: new ObjectId(id),
+        },
+
+        {
+          $set: {
+            title: title,
+            content: content,
+          },
+        },
+      );
+
+      // check whether the article exists or not
+
+      if (result.matchedCount === 0) {
+        return res.status(404).json({
+          message: "article no found",
+        });
+      }
+
+      res.status(200).json({
+        message: "article updated",
+      });
+    } catch (error) {
+      console.log(error);
+
+      res.status(500).json({
+        message: " something went wrong",
+      });
+    }
+  });
+
+  app.delete("/delete-article/:id", async (req, res) => {
+    try {
+      const id = req.params.id;
+
+      //checking valid id
+
+      if (!ObjectId.isValid(id)) {
+        return res.status(400).json({
+          message: " invalid  id",
+        });
+      }
+
+      const result = await articles.deleteOne({
+        _id: new ObjectId(id),
       });
 
+      if (!result.deletedCount === 0) {
+        return res.status(404).json({
+          message: " article not found",
+        });
+      }
+
+      res.status(200).json({
+        message: "article deleted",
+      });
+    } catch (error) {
+      return res.status(500).json({
+        message: " something went wrong",
+      });
     }
-  
-
   });
-
-
-
-app.put("/articles/:id", async(req, res)=>{
-
-  
-  const id= req.params.id;
-
-  const{ title, content}= req.body;
-
-  
-
-  await articles.updateOne({
-    _id: new ObjectId(id)},
-  
-    {
-    $set:{
-      title: title,
-      content: content
-    }
-  }
-  
-  );
-
-  res.json({
-    message: "article updated"
-  });
-});
-
-
-app.delete("/delete-article/:id", async(req, res)=>{
-
-  const id = req.params.id;
-
-  await articles.deleteOne({
-    _id: new ObjectId(id)
-  });
-
-  res.json({
-    message: "article deleted"
-  })
-})
-
-
-
 }
 connectdb();
 
@@ -115,15 +150,15 @@ app.post("/articles", async (req, res) => {
     title: title,
     content: content,
   };
- // console.log(title);
-  
- // console.log(content);
+  // console.log(title);
+
+  // console.log(content);
 
   await articles.insertOne(article);
 
   res.json({
     message: "article posted",
-    article: article
+    article: article,
   });
 });
 
