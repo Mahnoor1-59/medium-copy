@@ -38,7 +38,7 @@ async function connectdb() {
       }
 
       const article = await articles.findOne({
-        _id: new MongoClient.ObjectId(id),
+        _id: new ObjectId(id),
       });
       if (!article) {
         return res.status(404).json({
@@ -64,7 +64,7 @@ async function connectdb() {
       //checking valid id
 
       if (!ObjectId.isValid(id)) {
-        res.status(400).json({
+        return res.status(400).json({
           message: "invalid id",
         });
       }
@@ -72,7 +72,7 @@ async function connectdb() {
 
       if (!title || !content) {
         return res.status(400).json({
-          message: "title and  content can be empty",
+          message: "title and  content require",
         });
       }
 
@@ -125,7 +125,7 @@ async function connectdb() {
         _id: new ObjectId(id),
       });
 
-      if (!result.deletedCount === 0) {
+      if (result.deletedCount === 0) {
         return res.status(404).json({
           message: " article not found",
         });
@@ -144,7 +144,15 @@ async function connectdb() {
 connectdb();
 
 app.post("/articles", async (req, res) => {
+
+  try{
   const { title, content } = req.body;
+
+  if(!title|| !content){
+    return res.status(400).json({
+      message: " title and content required",
+    });
+  }
 
   const article = {
     title: title,
@@ -154,12 +162,23 @@ app.post("/articles", async (req, res) => {
 
   // console.log(content);
 
-  await articles.insertOne(article);
+ const result = await articles.insertOne(article);
 
-  res.json({
+  res.status(201).json({
     message: "article posted",
-    article: article,
+    article: {
+      _id: result.insertedId,
+      title: title,
+      content: content,
+    },
   });
+}catch(error){
+
+  console.log(error)
+  return res.status(500).json({
+    message: "something went wrong"
+  });
+}
 });
 
 app.listen(3000, () => {
